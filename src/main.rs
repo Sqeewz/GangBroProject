@@ -1,8 +1,11 @@
-use server::config::config_loader::load;
-use tracing::{Level, info};
+use std::error;
+
+use server::{config::config_loader::load, infrastructure::database::postgresql_connection};
+use tracing::{Level, info, error};
 
 #[tokio::main]
 async fn main() {
+   
     tracing_subscriber::fmt()
         .with_max_level(Level::DEBUG)
         .init();
@@ -15,7 +18,17 @@ async fn main() {
         }
     };
 
-    info!("YESSSSS");
-    info!("Loaded configuration: {:?}", dotenvy_env);           
+    info!("YESSSSS");         
+
+    let postgres_pool = match postgresql_connection::establish_connection(&dotenvy_env.database.url)
+    {
+        Ok(pool) => pool,
+        Err(e) => {
+            error!("Failed to establish connection to Postgres: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    info!("Connect to the PostgreSQL database successfully.");
 
 }
