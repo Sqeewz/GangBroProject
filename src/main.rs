@@ -1,4 +1,4 @@
-use std::{error, sync::Arc};
+use std::sync::Arc;
 
 use server::{config::config_loader::load, infrastructure::{database::postgresql_connection, http::http_serv::start}};
 use tracing::{Level, info, error};
