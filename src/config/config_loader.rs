@@ -4,8 +4,19 @@ use crate::config::{config_model::{Database, DotEnvyConfig, Server}, stage::Stag
 
 pub fn load() -> Result<DotEnvyConfig> {
     dotenvy::dotenv().ok();
+    
+     let server = Server {
+        port: std::env::var("SERVER_PORT")
+            .expect("SERVER_PORT is valid")
+            .parse()?,
+        body_limit: std::env::var("SERVER_BODY_LIMIT")
+            .expect("SERVER_BODY_LIMIT is valid")
+            .parse()?,
+        timeout: std::env::var("SERVER_TIMEOUT")
+            .expect("SERVER_TIMEOUT is valid")
+            .parse()?,
+    };
 
-    let server = Server(std::env::var("SERVER_PORT").expect("SERVER_PORT not set").parse()?, std::env::var("SERVER_BODY_LIMIT").expect("SERVER_BODY_LIMIT not set").parse()?, std::env::var("SERVER_TIMEOUT").expect("SERVER_TIMEOUT not set").parse()?);
 
     let database = Database {
         url: std::env::var("DATABASE_URL").expect("DATABASE_URL not set"),

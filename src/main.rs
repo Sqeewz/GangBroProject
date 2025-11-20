@@ -1,6 +1,6 @@
-use std::error;
+use std::{error, sync::Arc};
 
-use server::{config::config_loader::load, infrastructure::database::postgresql_connection};
+use server::{config::config_loader::load, infrastructure::{database::postgresql_connection, http::http_serv::start}};
 use tracing::{Level, info, error};
 
 #[tokio::main]
@@ -31,4 +31,5 @@ async fn main() {
 
     info!("Connect to the PostgreSQL database successfully.");
 
+    start(Arc::new(dotenvy_env), Arc::new(postgres_pool)).await.expect("Failed to start the server");
 }
