@@ -3,6 +3,7 @@ use std::sync::Arc;
 use server::{config::config_loader::load, infrastructure::{database::postgresql_connection, http::http_serv::start}};
 use tracing::{Level, info, error};
 
+
 #[tokio::main]
 async fn main() {
    
@@ -31,5 +32,11 @@ async fn main() {
 
     info!("Connect to the PostgreSQL database successfully.");
 
+// Use MissionEntity from server::domain::entities::missions; no local definition needed here.
+
+
+
     start(Arc::new(dotenvy_env), Arc::new(postgres_pool)).await.expect("Failed to start the server");
+
+
 }
