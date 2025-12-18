@@ -1,38 +1,21 @@
-use crate::{domain::value_objects::mission_model::MissionModel, infrastructure::database::schema::missions};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
+use crate::{
+    domain::value_objects::mission_model::MissionModel, infrastructure::database::schema::missions,
+};
 
-#[derive(Debug, Clone, Identifiable, Queryable, Selectable)]
+#[derive(Debug, Clone, Identifiable, Selectable, Queryable)]
 #[diesel(table_name = missions)]
 pub struct MissionEntity {
     pub id: i32,
-    pub name: String,
-    pub description: Option<String>,
-    pub status: String,
     pub chief_id: i32,
+    pub name: String,
+    pub status: String,
+    pub description: Option<String>,
     pub create_at: NaiveDateTime,
     pub update_at: NaiveDateTime,
 }
-
-#[derive(Debug, Clone, Insertable)]
-#[diesel(table_name = missions)]
-pub struct NewMission {
-    pub name: String,
-    pub description: String,
-    pub status: String,
-    pub chief_id: i32,
-}
-
-#[derive(Debug, Clone, AsChangeset)]
-#[diesel(table_name = missions)]
-pub struct UpdateMission {
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub status: Option<String>,
-    pub chief_id: i32,
-}
-
 
 impl MissionEntity {
     pub fn to_model(&self, crew_count: i64) -> MissionModel {
@@ -45,6 +28,23 @@ impl MissionEntity {
             crew_count,
             created_at: self.create_at,
             updated_at: self.update_at,
-        }   
+        }
     }
+}
+
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = missions)]
+pub struct AddMissionEntity {
+    pub chief_id: i32,
+    pub name: String,
+    pub status: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, AsChangeset)]
+#[diesel(table_name = missions)]
+pub struct EditMissionEntity {
+    pub chief_id: i32,
+    pub name: Option<String>,
+    pub description: Option<String>,
 }

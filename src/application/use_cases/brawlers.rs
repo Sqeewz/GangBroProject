@@ -1,7 +1,12 @@
+use crate::{
+    domain::{
+        repositories::brawlers::BrawlerRepository,
+        value_objects::brawler_model::RegisterBrawlerModel,
+    },
+    infrastructure::argon2::hash,
+};
+use anyhow::Result;
 use std::sync::Arc;
-use crate::domain::value_objects::brawler_model::RegisterBrawlerModel;
-use crate::infrastructure::argon2::hash;
-use crate::domain::repositories::brawlers::BrawlerRepository;
 
 pub struct BrawlersUseCase<T>
 where
@@ -9,7 +14,6 @@ where
 {
     brawler_repository: Arc<T>,
 }
-
 
 impl<T> BrawlersUseCase<T>
 where
@@ -19,7 +23,7 @@ where
         Self { brawler_repository }
     }
 
-    pub async fn register(&self, mut register_brawler_model: RegisterBrawlerModel) -> Result<i32, anyhow::Error> {
+    pub async fn register(&self, mut register_brawler_model: RegisterBrawlerModel) -> Result<i32> {
         let hashed_password = hash(register_brawler_model.password.clone())?;
 
         register_brawler_model.password = hashed_password;
