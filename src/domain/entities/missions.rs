@@ -13,8 +13,8 @@ pub struct MissionEntity {
     pub name: String,
     pub status: String,
     pub description: Option<String>,
-    pub create_at: NaiveDateTime,
-    pub update_at: NaiveDateTime,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 impl MissionEntity {
@@ -26,8 +26,8 @@ impl MissionEntity {
             status: self.status.clone(),
             chief_id: self.chief_id,
             crew_count,
-            created_at: self.create_at,
-            updated_at: self.update_at,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
         }
     }
 }

@@ -40,3 +40,9 @@ pub fn get_stage() ->Stage {
 
     Stage::from_str(&stage_str).unwrap_or_default()
 }
+pub fn get_user_secret() -> Result<String>{
+    let secret_env = std::env::var("JWT_SECRET")
+    .map_err(|_| anyhow::anyhow!("JWT_SECRET not set"))?;
+    Ok(secret_env)
+}
+

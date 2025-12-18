@@ -42,7 +42,7 @@ impl MissionViewingRepository for MissionViewingPostgres {
         let mut conn = Arc::clone(&self.db_pool).get()?;
         let result = missions::table
             .filter(missions::id.eq(mission_id))
-            .filter(missions::delete_at.is_null())
+            .filter(missions::deleted_at.is_null())
             .select(MissionEntity::as_select())
             .first::<MissionEntity>(&mut conn)?;
 
@@ -53,8 +53,9 @@ impl MissionViewingRepository for MissionViewingPostgres {
         let mut conn = Arc::clone(&self.db_pool).get()?;
 
         let mut query = missions::table
-            .filter(missions::delete_at.is_null())
-            .into_boxed();
+            .filter(missions::deleted_at.is_null())
+            .into_boxed()
+            .select(MissionEntity::as_select());
 
         if let Some(status) = &mission_filter.status {
             let status_string = status.to_string();
@@ -65,8 +66,7 @@ impl MissionViewingRepository for MissionViewingPostgres {
         };
 
         let value = query
-            .select(MissionEntity::as_select())
-            .order_by(missions::create_at.desc())
+            .order_by(missions::created_at.desc())
             .load::<MissionEntity>(&mut conn)?;
 
         Ok(value)

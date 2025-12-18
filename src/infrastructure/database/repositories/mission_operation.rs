@@ -34,7 +34,7 @@ impl MissionOperationPostgres {
             update(missions::table)
                 .filter(missions::id.eq(mission_id))
                 .filter(missions::chief_id.eq(chief_id))
-                .filter(missions::delete_at.is_null())
+                .filter(missions::deleted_at.is_null())
                 .set((missions::status.eq(status_string),))
                 .returning(missions::id)
                 .get_result::<i32>(&mut conn)
