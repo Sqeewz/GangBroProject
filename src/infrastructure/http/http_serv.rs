@@ -1,12 +1,11 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use axum::{
-    Router,
-    http::{
+    Json, Router, extract::State, http::{
         Method, StatusCode,
         header::{AUTHORIZATION, CONTENT_TYPE},
-    },
+    }, response::IntoResponse
 };
 use tokio::net::TcpListener;
 use tower_http::{
@@ -19,8 +18,7 @@ use tower_http::{
 use tracing::info;
 
 use crate::{
-    config::config_model::DotEnvyConfig,
-    infrastructure::database::postgresql_connection::PgPoolSquad,
+    application::use_cases::brawlers::BrawlersUseCase, config::config_model::DotEnvyConfig, domain::{repositories::brawlers::BrawlerRepository, value_objects::brawler_model::RegisterBrawlerModel}, infrastructure::{database::postgresql_connection::PgPoolSquad, http::routers::{self}}
 };
 
 fn static_serve() -> Router {
@@ -31,14 +29,19 @@ fn static_serve() -> Router {
     Router::new().fallback_service(service)
 }
 
-fn api_serve() -> Router {
-    Router::new().fallback(|| async { (StatusCode::NOT_FOUND, "API not found") })
+fn api_serve(db_pool: Arc<PgPoolSquad>) -> Router {
+    Router::new()
+        .nest("/brawler", routers::brawlers::routes(Arc::clone(&db_pool)))
+        .nest("/auth", routers::authentication::routes(Arc::clone(&db_pool)))
+        .nest("/mission-management", routers::missions_management::routes(Arc::clone(&db_pool)))
+    .fallback(|| async { (StatusCode::NOT_FOUND, "API not found") })
+
 }
 
 pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Result<()> {
     let app = Router::new()
         .merge(static_serve())
-        .nest("/api", api_serve())
+        .nest("/api", api_serve(db_pool))
         // .fallback(default_router::health_check)
         // .route("/health_check", get(default_router::health_check)
         .layer(TimeoutLayer::new(Duration::from_secs(
@@ -81,5 +84,19 @@ async fn shutdown_signal() {
     tokio::select! {
         _ = ctrl_c => info!("Receive ctrl + c signal"),
         _ = terminate => info!("Receive terminate signal"),
+    }
+}
+
+pub async fn register<T>(
+    State(brawlers_use_case): State<Arc<BrawlersUseCase<T>>>,
+    Json(register_brawler_model): Json<RegisterBrawlerModel>,
+) -> impl IntoResponse
+where
+    T: BrawlerRepository + Send + Sync,
+{
+    match brawlers_use_case.register(register_brawler_model).await {
+        Ok(brawler_id) => (StatusCode::CREATED, brawler_id.to_string()).into_response(),
+
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }

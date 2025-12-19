@@ -4,9 +4,9 @@ use crate::domain::{
     repositories::{
         mission_management::MissionManagementRepository, mission_viewing::MissionViewingRepository,
     },
-    value_objects::mission_model::{NewMissionModel, UpdateMissionModel},
+    value_objects::mission_model::{AddMissionModel, EditMissionModel},
 };
-use anyhow::Result;
+
 pub struct MissionManagementUseCase<T1, T2>
 where
     T1: MissionManagementRepository + Send + Sync,
@@ -16,6 +16,7 @@ where
     mission_viewing_repository: Arc<T2>,
 }
 
+use anyhow::Result;
 impl<T1, T2> MissionManagementUseCase<T1, T2>
 where
     T1: MissionManagementRepository + Send + Sync,
@@ -31,7 +32,7 @@ where
         }
     }
 
-    pub async fn add(&self, chief_id: i32, add_mission_model: NewMissionModel) -> Result<i32> {
+    pub async fn add(&self, chief_id: i32, add_mission_model: AddMissionModel) -> Result<i32> {
         let insert_mission_entity = add_mission_model.to_entity(chief_id);
 
         let result = self
@@ -46,7 +47,7 @@ where
         &self,
         mission_id: i32,
         chief_id: i32,
-        edit_mission_model: UpdateMissionModel,
+        edit_mission_model: EditMissionModel,
     ) -> Result<i32> {
         let crew_count = self
             .mission_viewing_repository

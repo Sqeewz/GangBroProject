@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Passport {
-    pub refresh_token: String,
+    // pub token_type: String,
     pub access_token: String,
+    // pub expires_in: usize,
+    // pub(crate) refresh_token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
