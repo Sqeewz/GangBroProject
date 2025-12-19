@@ -1,30 +1,20 @@
 
-@username = menta
-
 ### register
+# @prompt username
 POST http://127.0.0.1:8000/api/brawler/register
 Content-Type: application/json
 
 {
-    "username": "menta",
-    "password": "P@ssw0rd"
+    "username":"{{username}}",
+    "password":"P@ssw0rd"
 }
 
 ### login
+# @prompt username
 POST http://127.0.0.1:8000/api/auth/login
 Content-Type: application/json
 
 {
-    "username": "{{username}}",
-    "password": "P@ssw0rd"
-}
-
-### add mission
-POST http://127.0.0.1:8000/api/mission-management/missions
-Content-Type: application/json
-
-{
-    "title": "First Mission",
-    "description": "This is the first mission.",
-    "reward": 100
+    "username":"{{username}}",
+    "password":"P@ssw0rd"
 }
