@@ -1,17 +1,30 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{ Extension, Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 
-use crate::{application::use_cases::brawlers::BrawlersUseCase, domain::{repositories::brawlers::BrawlerRepository, value_objects::brawler_model::RegisterBrawlerModel}, infrastructure::database::{postgresql_connection::PgPoolSquad, repositories::brawlers::BrawlerPostgres}};
+use crate::{
+    application::use_cases::brawlers::BrawlersUseCase,
+    domain::{
+        repositories::brawlers::BrawlerRepository,
+        value_objects::{brawler_model::RegisterBrawlerModel, uploaded_image::UploadAvatar},
+    },
+    infrastructure::{database::{
+        postgresql_connection::PgPoolSquad, repositories::brawlers::BrawlerPostgres,
+    }, http::middleware::auth::authorization},
+};
 
 pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
-    let brawler_repository = BrawlerPostgres::new(db_pool);
-    let brawlers_use_case = BrawlersUseCase::new(Arc::new(brawler_repository));
+    let brawlers_repository = BrawlerPostgres::new(db_pool);
+    let brawlers_use_case = BrawlersUseCase::new(Arc::new(brawlers_repository));
+
+    let protected_router = Router::new()
+        .route("/avatar", post(upload_avatar))
+        .route_layer(axum::middleware::from_fn(authorization));
 
     Router::new()
+        .merge(protected_router)
         .route("/register", post(register))
         .with_state(Arc::new(brawlers_use_case))
-    // .with_state(x) ทำให้สามารถเข้าถึง x นั้นในทุก route handler
 }
 
 pub async fn register<T>(
@@ -22,8 +35,25 @@ where
     T: BrawlerRepository + Send + Sync,
 {
     match brawlers_use_case.register(register_brawler_model).await {
-        Ok(brawler_id) => (StatusCode::CREATED, brawler_id.to_string()).into_response(),
+        Ok(passport) => (StatusCode::CREATED, Json(passport)).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
 
+
+pub async fn upload_avatar<T>(
+    State(brawlers_use_case): State<Arc<BrawlersUseCase<T>>>,
+    Extension(brawler_id): Extension<i32>,
+    Json(upload_image): Json<UploadAvatar>,
+) -> impl IntoResponse
+where
+    T: BrawlerRepository + Send + Sync,
+  {
+    match brawlers_use_case
+        .upload_avatar(upload_image.base64_string, brawler_id)
+        .await
+    {
+        Ok(uploaded_image) => (StatusCode::CREATED, Json(uploaded_image)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }

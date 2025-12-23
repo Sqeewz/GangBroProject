@@ -6,8 +6,9 @@ use diesel::{ExpressionMethods, PgTextExpressionMethods, QueryDsl, RunQueryDsl, 
 
 use crate::{
     domain::{
-        entities::missions::MissionEntity, repositories::mission_viewing::MissionViewingRepository,
-        value_objects::mission_filter::MissionFilter,
+        entities::missions::MissionEntity,
+        repositories::mission_viewing::MissionViewingRepository,
+        value_objects::{brawler_model::BrawlerModel, mission_filter::MissionFilter},
     },
     infrastructure::database::{
         postgresql_connection::PgPoolSquad,
@@ -54,8 +55,7 @@ impl MissionViewingRepository for MissionViewingPostgres {
 
         let mut query = missions::table
             .filter(missions::deleted_at.is_null())
-            .into_boxed()
-            .select(MissionEntity::as_select());
+            .into_boxed();
 
         if let Some(status) = &mission_filter.status {
             let status_string = status.to_string();
@@ -66,9 +66,56 @@ impl MissionViewingRepository for MissionViewingPostgres {
         };
 
         let value = query
+            .select(MissionEntity::as_select())
             .order_by(missions::created_at.desc())
             .load::<MissionEntity>(&mut conn)?;
 
         Ok(value)
+    }
+    async fn get_mission_count(&self, mission_id: i32) -> Result<Vec<BrawlerModel>> {
+        let mut conn = Arc::clone(&self.db_pool).get()?;
+
+        let sql = r#"
+            SELECT 
+               COALESCE(b.avatar_url, '') AS avatar_url
+               COALESCE(s.success_count, 0) AS success_count,
+               COALESCE(j.joined_count, 0) AS joined_count,
+            FROM 
+                crew_memberships cm
+            INNER JOIN 
+                brawlers b ON b.id = cm.brawler_id 
+            LEFT JOIN 
+                (
+                    SELECT 
+                        cm2.brawler_id, 
+                        COUNT(*) AS success_count
+                    FROM 
+                        crew_memberships cm2
+                    INNER JOIN 
+                        missions m2 ON m2.id = cm2.mission_id
+                    WHERE 
+                        m2.status = 'completed' AND m2.id = $1
+                    GROUP BY 
+                        cm2.brawler_id
+                ) s ON s.brawler_id = cm.brawler_id
+            LEFT JOIN 
+                (
+                    SELECT 
+                        cm3.brawler_id, 
+                        COUNT(*) AS joined_count
+                    FROM 
+                        crew_memberships cm3
+                    GROUP BY 
+                        cm3.brawler_id
+                ) j ON j.brawler_id = b.id
+            WHERE 
+                cm.mission_id = $1
+        "#;
+
+        let result = diesel::sql_query(sql)
+            .bind::<diesel::sql_types::Int4, _>(mission_id)
+            .load::<BrawlerModel>(&mut conn)?;
+
+        Ok(result)
     }
 }

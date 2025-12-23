@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{Extension, Router, extract::{Path, State}, http::StatusCode, response::IntoResponse, routing::{delete, post}};
 
-use crate::{application::use_cases::crew_operation::CrewOperationUseCase, domain::repositories::{crew_operation::CrewOperationRepository, mission_viewing::MissionViewingRepository}, infrastructure::{database::{postgresql_connection::PgPoolSquad, repositories::{crew_operation::CrewOperationPostgres, mission_viewing::MissionViewingPostgres}}, http::middleware::arth::authorization}};
+use crate::{application::use_cases::crew_operation::CrewOperationUseCase, domain::repositories::{crew_operation::CrewOperationRepository, mission_viewing::MissionViewingRepository}, infrastructure::{database::{postgresql_connection::PgPoolSquad, repositories::{crew_operation::CrewOperationPostgres, mission_viewing::MissionViewingPostgres}}, http::middleware::auth::authorization}};
 
 pub async fn join<T1, T2>(
     State(crew_operation_use_case): State<Arc<CrewOperationUseCase<T1, T2>>>,
