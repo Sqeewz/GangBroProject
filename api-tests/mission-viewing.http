@@ -1,3 +1,5 @@
+@base_url = http://127.0.0.1:8000/api
+
 ### get mission by id
 # @prompt mission_id Mission ID
 GET  {{base_url}}/view/{{mission_id}}
